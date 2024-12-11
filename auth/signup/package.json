@@ -1,0 +1,11 @@
+{
+  "name": "signup-lambda",
+  "version": "1.0.0",
+  "main": "index.mjs",
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "amazon-cognito-identity-js": "^6.3.12"
+  }
+}
