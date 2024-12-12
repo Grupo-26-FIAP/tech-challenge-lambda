@@ -1,54 +1,40 @@
+import dotenv from 'dotenv';
 import {
-  AuthenticationDetails,
-  CognitoUser,
-  CognitoUserPool,
-} from 'amazon-cognito-identity-js';
+  InitiateAuthCommand,
+  CognitoIdentityProviderClient,
+  AuthFlowType
+} from '@aws-sdk/client-cognito-identity-provider';
+import { getAwsSecretHash } from './client-secret.js';
+
+dotenv.config();
+
+const cognitoClient = new CognitoIdentityProviderClient({ 
+  region: process.env.AWS_COGNITO_REGION,
+});
 
 export const handler = async (event) => {
   const { email, password } = event;
-
-  const userPool = new CognitoUserPool({
-    UserPoolId: process.env.AWS_COGNITO_USER_POOL_ID,
+  
+  const command = new InitiateAuthCommand({
+    AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
+    AuthParameters: {
+      USERNAME: email,
+      PASSWORD: password,
+      SECRET_HASH: getAwsSecretHash(email)
+    },
     ClientId: process.env.AWS_COGNITO_CLIENT_ID,
   });
 
-  const authenticationDetails = new AuthenticationDetails({
-    Username: email,
-    Password: password,
-  });
-
-  const userCognito = new CognitoUser({
-    Username: email,
-    Pool: userPool,
-  });
-
   try {
-    const response = await new Promise((resolve, reject) => {
-      userCognito.authenticateUser(authenticationDetails, {
-        onSuccess: (result) => {
-          resolve({
-            accessToken: result.getAccessToken().getJwtToken(),
-            refreshToken: result.getRefreshToken().getToken(),
-          });
-        },
-        onFailure: (err) => {
-          reject(new Error(err.message || "Authentication failed"));
-        },
-      });
-    });
+    const response = await cognitoClient.send(command);
     
     return {
       statusCode: 200,
-      body: JSON.stringify(response),
+      response: response,
     };
   } catch (error) {
-    console.error({ error });
-    return {
-      statusCode: 401,
-      body: JSON.stringify({
-        message: "Authentication failed",
-        error: error.message,
-      }),
-    };
+    console.error('Error during signIn:', error);
+
+    throw new Error('SignIn failed.');
   }
 };
