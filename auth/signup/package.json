@@ -5,7 +5,10 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "type": "module",
   "dependencies": {
-    "amazon-cognito-identity-js": "^6.3.12"
+    "@aws-sdk/client-cognito-identity-provider": "^3.710.0",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.4.7"
   }
 }
