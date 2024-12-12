@@ -16,7 +16,7 @@ export const handler = async (event) => {
   const { email, password } = event;
   
   const command = new InitiateAuthCommand({
-    AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
+    AuthFlow: AuthFlowType.USER_AUTH,
     AuthParameters: {
       USERNAME: email,
       PASSWORD: password,
