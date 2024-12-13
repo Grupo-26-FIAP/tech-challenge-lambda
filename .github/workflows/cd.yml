@@ -47,7 +47,7 @@ jobs:
           echo "AWS_COGNITO_REGION=eu-north-1" >> $lambda/.env
 
           # Compactar arquivos
-          zip -j $lambda.zip $lambda/*
+          zip $lambda.zip $lambda/*
 
           # Fazer deploy para AWS Lambda
           lambda_name="${lambda//\//-}"
