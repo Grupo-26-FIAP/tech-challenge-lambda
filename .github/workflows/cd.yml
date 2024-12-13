@@ -39,15 +39,14 @@ jobs:
 
           cd $lambda
           npm ci
-          cd ../..
 
           # Criar .env
-          echo "AWS_COGNITO_CLIENT_ID=${{ secrets.AWS_COGNITO_CLIENT_ID }}" > $lambda/.env
-          echo "AWS_COGNITO_CLIENT_SECRET=${{ secrets.AWS_COGNITO_CLIENT_SECRET }}" >> $lambda/.env
-          echo "AWS_COGNITO_REGION=eu-north-1" >> $lambda/.env
+          echo "AWS_COGNITO_CLIENT_ID=${{ secrets.AWS_COGNITO_CLIENT_ID }}" > ./.env
+          echo "AWS_COGNITO_CLIENT_SECRET=${{ secrets.AWS_COGNITO_CLIENT_SECRET }}" >> ./.env
+          echo "AWS_COGNITO_REGION=eu-north-1" >> ./.env
 
           # Compactar arquivos
-          zip $lambda.zip $lambda/*
+          zip -r $lambda.zip ./*
 
           # Fazer deploy para AWS Lambda
           lambda_name="${lambda//\//-}"
@@ -55,4 +54,5 @@ jobs:
             --function-name=$lambda_name \
             --zip-file=fileb://$lambda.zip
 
+          cd ../..
         done
