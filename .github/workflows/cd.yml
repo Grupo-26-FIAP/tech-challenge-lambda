@@ -18,19 +18,17 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    # Step 2: Configurar AWS Credenciais
     - uses: aws-actions/configure-aws-credentials@v3
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: 'eu-north-1'
+        aws-region: ${{ secrets.AWS_SECRET_REGION }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: lts/hydrogen
 
-    # Step 3: Processar Lambdas passadas via input
     - name: Deploy Specified Lambdas
       run: |
         IFS=',' read -r -a LAMBDAS <<< "${{ github.event.inputs.lambdas }}"
@@ -40,15 +38,9 @@ jobs:
           cd $lambda
           npm ci
 
-          # Criar .env
-          echo "AWS_COGNITO_CLIENT_ID=${{ secrets.AWS_COGNITO_CLIENT_ID }}" > ./.env
-          echo "AWS_COGNITO_CLIENT_SECRET=${{ secrets.AWS_COGNITO_CLIENT_SECRET }}" >> ./.env
-          echo "AWS_COGNITO_REGION=eu-north-1" >> ./.env
-
           # Compactar arquivos
           zip -r lambda.zip ./*
 
-          # Fazer deploy para AWS Lambda
           lambda_name="${lambda//\//-}"
           aws lambda update-function-code \
             --function-name=$lambda_name \
