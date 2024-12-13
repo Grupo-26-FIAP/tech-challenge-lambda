@@ -1,26 +1,58 @@
 name: Continuos Deployment
 
 on:
-  pull_request:
-    types:
-      - closed
-
-env:
-  REGION_DEFAULT: 'us-east-1'
-  CLUSTER_NAME: 'EKS-FIAP'
+  workflow_dispatch:
+    inputs:
+      lambdas:
+        description: "Names of the Lambdas to deploy (comma-separated)"
+        required: false
+        type: string
+        options:
+        - auth:signin
+        - auth:signup
+        default: "auth/signin,auth/signup"
 
 jobs:
-  lambda1:
+  manual-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: lts/hydrogen
-      - uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
-      - run: zip -j lambda1.zip ./lambda1/index.js
-      - run: aws lambda update-function-code --function-name=lambda1 --zip-file=fileb://lambda1.zip
+    - uses: actions/checkout@v3
+
+    # Step 2: Configurar AWS Credenciais
+    - uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_SECRET_REGION }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: lts/hydrogen
+
+    # Step 3: Processar Lambdas passadas via input
+    - name: Deploy Specified Lambdas
+      run: |
+        IFS=',' read -r -a LAMBDAS <<< "${{ github.event.inputs.lambdas }}"
+        for lambda in "${LAMBDAS[@]}"; do
+          echo "Processing Lambda: $lambda"
+
+          cd $lambda
+          npm ci
+          cd ../..
+
+          # Criar .env
+          echo "AWS_COGNITO_CLIENT_ID=${{ secrets.AWS_COGNITO_CLIENT_ID }}" > $lambda/.env
+          echo "AWS_COGNITO_CLIENT_SECRET=${{ secrets.AWS_COGNITO_CLIENT_SECRET }}" >> $lambda/.env
+          echo "AWS_COGNITO_REGION=${{ secrets.AWS_SECRET_REGION }}" >> $lambda/.env
+
+          # Compactar arquivos
+          zip -j $lambda.zip $lambda/*
+
+          # Fazer deploy para AWS Lambda
+          lambda_name="${lambda//\//-}"
+          aws lambda update-function-code \
+            --function-name=$lambda_name \
+            --zip-file=fileb://$lambda.zip
+
+        done
