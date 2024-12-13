@@ -23,7 +23,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_SECRET_REGION }}
+        aws-region: 'eu-north-1'
 
     - name: Setup Node.js
       uses: actions/setup-node@v3
@@ -44,7 +44,7 @@ jobs:
           # Criar .env
           echo "AWS_COGNITO_CLIENT_ID=${{ secrets.AWS_COGNITO_CLIENT_ID }}" > $lambda/.env
           echo "AWS_COGNITO_CLIENT_SECRET=${{ secrets.AWS_COGNITO_CLIENT_SECRET }}" >> $lambda/.env
-          echo "AWS_COGNITO_REGION=${{ secrets.AWS_SECRET_REGION }}" >> $lambda/.env
+          echo "AWS_COGNITO_REGION=eu-north-1" >> $lambda/.env
 
           # Compactar arquivos
           zip -j $lambda.zip $lambda/*
