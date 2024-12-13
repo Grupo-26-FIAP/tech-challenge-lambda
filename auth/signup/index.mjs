@@ -19,7 +19,7 @@ export const handler = async (event) => {
     Username: email,
     Password: password,
     SecretHash: getAwsSecretHash(email),
-    UserAttributes: [{ Name: "email", Value: email }],
+    UserAttributes: [{ Name: 'email', Value: email }],
   });
 
   try {
