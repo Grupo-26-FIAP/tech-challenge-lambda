@@ -12,7 +12,8 @@ const cognitoClient = new CognitoIdentityProviderClient({
 });
 
 export const handler = async (event) => {
-  const { email, password } = event;
+
+  const { email, password } = JSON.parse(event.body);
 
   const command = new SignUpCommand({
     ClientId: process.env.AWS_COGNITO_CLIENT_ID,

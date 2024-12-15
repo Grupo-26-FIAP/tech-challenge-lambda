@@ -1,40 +1,50 @@
-import dotenv from 'dotenv';
 import {
-  InitiateAuthCommand,
-  CognitoIdentityProviderClient,
-  AuthFlowType
-} from '@aws-sdk/client-cognito-identity-provider';
-import { getAwsSecretHash } from './client-secret.js';
-
-dotenv.config();
-
-const cognitoClient = new CognitoIdentityProviderClient({ 
-  region: process.env.AWS_COGNITO_REGION,
-});
-
+  AuthenticationDetails,
+  CognitoUser,
+  CognitoUserPool,
+} from 'amazon-cognito-identity-js';
 export const handler = async (event) => {
-  const { email, password } = event;
-  
-  const command = new InitiateAuthCommand({
-    AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
-    AuthParameters: {
-      USERNAME: email,
-      PASSWORD: password,
-      SECRET_HASH: getAwsSecretHash(email)
-    },
+ const { email, password } = JSON.parse(event.body);
+
+  const userPool = new CognitoUserPool({
+    UserPoolId: process.env.AWS_COGNITO_USER_POOL_ID,
     ClientId: process.env.AWS_COGNITO_CLIENT_ID,
   });
-
+  const authenticationDetails = new AuthenticationDetails({
+    Username: email,
+    Password: password,
+  });
+  const userCognito = new CognitoUser({
+    Username: email,
+    Pool: userPool,
+  });
   try {
-    const response = await cognitoClient.send(command);
+    const response = await new Promise((resolve, reject) => {
+      userCognito.authenticateUser(authenticationDetails, {
+        onSuccess: (result) => {
+          resolve({
+            accessToken: result.getAccessToken().getJwtToken(),
+            refreshToken: result.getRefreshToken().getToken(),
+          });
+        },
+        onFailure: (err) => {
+          reject(new Error(err.message || "Authentication failed"));
+        },
+      });
+    });
     
     return {
       statusCode: 200,
-      response: response,
+      body: JSON.stringify(response),
     };
   } catch (error) {
-    console.error('Error during signIn:', error);
-
-    throw new Error('SignIn failed.');
+    console.error({ error });
+    return {
+      statusCode: 401,
+      body: JSON.stringify({
+        message: "Authentication failed",
+        error: error.message,
+      }),
+    };
   }
 };
