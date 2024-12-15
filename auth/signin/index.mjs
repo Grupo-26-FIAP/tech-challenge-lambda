@@ -4,9 +4,7 @@ import {
   CognitoUserPool,
 } from 'amazon-cognito-identity-js';
 export const handler = async (event) => {
-  
-  const { email, password } = JSON.parse(event.body);
-
+ const { email, password } = JSON.parse(event.body);
 
   const userPool = new CognitoUserPool({
     UserPoolId: process.env.AWS_COGNITO_USER_POOL_ID,
