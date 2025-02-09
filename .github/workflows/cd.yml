@@ -1,16 +1,10 @@
 name: Continuos Deployment
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
-    inputs:
-      lambdas:
-        description: "Names of the Lambdas to deploy (comma-separated)"
-        required: false
-        type: string
-        options:
-        - auth:signin
-        - auth:signup
-        default: "auth/signin,auth/signup"
 
 jobs:
   manual-deploy:
@@ -20,32 +14,47 @@ jobs:
 
     - uses: aws-actions/configure-aws-credentials@v3
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_SECRET_REGION }}
-        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+        aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+        aws-session-token: ${{ secrets.SESSION_TOKEN }}
+        aws-region: ${{ env.REGION_DEFAULT }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: lts/hydrogen
 
-    - name: Deploy Specified Lambdas
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: lts/hydrogen
+
+    - name: Get list of changed files
+      id: changed-files
       run: |
-        IFS=',' read -r -a LAMBDAS <<< "${{ github.event.inputs.lambdas }}"
+        echo "::set-output name=files::$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})"
+
+    - name: Deploy Changed Lambdas
+      run: |
+        CHANGED_FILES="${{ steps.changed-files.outputs.files }}"
+        LAMBDAS=("authorizer", "administrative" "customer-signin" "customer-signup")
+
         for lambda in "${LAMBDAS[@]}"; do
-          echo "Processing Lambda: $lambda"
+          if echo "$CHANGED_FILES" | grep -q "$lambda"; then
+            echo "Deploying Lambda: $lambda"
 
-          cd $lambda
-          npm ci
+            cd $lambda
+            npm ci
 
-          # Compactar arquivos
-          zip -r lambda.zip ./*
+            # Compactar arquivos
+            zip -r lambda.zip ./*
 
-          lambda_name="${lambda//\//-}"
-          aws lambda update-function-code \
-            --function-name=$lambda_name \
-            --zip-file=fileb://lambda.zip
+            lambda_name="${lambda//\//-}"
+            aws lambda update-function-code \
+              --function-name=$lambda_name \
+              --zip-file=fileb://lambda.zip
 
-          cd ../..
+            cd - > /dev/null
+          fi
         done
