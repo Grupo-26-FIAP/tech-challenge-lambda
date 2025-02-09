@@ -5,6 +5,10 @@ on:
     branches:
       - main
   workflow_dispatch:
+  
+env:
+  REGION_DEFAULT: us-east-1
+
 
 jobs:
   manual-deploy:
