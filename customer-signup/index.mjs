@@ -30,7 +30,7 @@ export const handler = async (event) => {
     const cognitoIdentityServiceProvider = new AWS.CognitoIdentityServiceProvider();
     await cognitoIdentityServiceProvider.adminConfirmSignUp({
       UserPoolId: process.env.AWS_COGNITO_USER_POOL_ID,
-      Username: name,
+      Username: cpf,
     }).promise();
 
 
