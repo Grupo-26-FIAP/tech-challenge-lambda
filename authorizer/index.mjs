@@ -5,9 +5,9 @@ export const handler = async (event) => {
 
     console.log(event);
 
-    console.log({authorizationToken: event.headers.authorizationtoken})
+    console.log({authorizationToken: event.headers.authorization})
 
-    const token = event.headers.authorizationtoken.split(" ")[1];
+    const token = event.headers.authorization.split(" ")[1];
 
     console.log({tokencapturado: token});
 
