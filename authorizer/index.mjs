@@ -36,6 +36,7 @@ export const handler = async (event) => {
   }
 };
 
+
 // Função auxiliar para gerar a política de autorização
 const generatePolicy = (effect, resource, principalId) => {
 
